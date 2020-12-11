@@ -22,17 +22,23 @@ class trainW2V:
 
     """ To train a word2vec model on a text obtained from pubmed scraping. """
 
-    def __init__(self, text, windowSize=5, negWords=15, embedDim=200, vocabSize=None, nOccur=10, wInit='scaled-uniform', epochs=50, batchSize= 1024, 
-                 optimizer='SGD', lr=0.01, patience=5, epsilon=1e-5, raw=False, tShuff=False, saveFreq=-1, restoreBest=True, outPath='./'):
+    def __init__(self, text, windowSize=5, negWords=15, embedDim=200, vocabSize=None, 
+                 nOccur=10, phMinCount=5, phThresh=10, phDepth=2,
+                 wInit='scaled-uniform', epochs=50, batchSize= 1024, 
+                 optimizer='SGD', lr=0.01, patience=5, epsilon=1e-5, raw=False, 
+                 tShuff=False, saveFreq=-1, restoreBest=True, outPath='./'):
 
         """ Args:
                 text (nested list): input text as list of sentences.
                 windowSize (int): size of the context window.
                 negWords (int): number of negative words used in training.
                 embedDim (int): dimensionality of the embedded space (default 200).
-                vocabSize (int): size of the the vocabulary.
+                vocabSize (int): size of the the vocabulary (default None)
                 nOccur (int): minimum number of occurrencies to keep a word in the dictionary,
-                          can be overwritten by vocabSize.
+                          can be overwritten by vocabSiz (default 10).
+                phMinCount (int): minimum number of occurrences to keep a phrase (default 5).
+                phThresh (float): minimum score to keep a phrase (default 10).
+                phDepth (int): number of recursions during phrase search (1 = bi-grams, default 2).
                 wInit (string): distribution from which to draw initial node weights (only 'scaled-uniform'
                         and 'xavier' are currently available, default 'scaled-uniform').
                 epochs (int): number of epochs  (default 50).
@@ -42,7 +48,8 @@ class trainW2V:
                 lr (float): learning rage (default .01).
                 patience (int): early stop patience (default 5).
                 epsilon (float): early stop epsilon (default 1e-5).
-                raw (bool): if True clean the input text.
+                raw (bool): if True clean the input text (default True).
+                
                 tShuff (bool): shuffle training set at each epoch (default false).
                 saveFreq (int): frequency of model checkpoints, if < 0 don't save checkpoints (default -1).
                 restoreBest (bool): restore and save best model by early stopping.
@@ -51,7 +58,8 @@ class trainW2V:
 
         """ Set up training dataset and batches. """
 
-        self.trainDs = textDataset(text,windowSize,negWords, vocabSize=vocabSize, raw=raw)
+        self.trainDs = textDataset(text, windowSize, negWords, vocabSize=vocabSize, nOccur=nOccur,
+                                    phMinCount=phMinCount, phThresh=phThresh, phDepth=phDepth,  raw=raw)
         self.trainBatch = DataLoader(self.trainDs, batch_size = batchSize, shuffle = tShuff)
         
         """ Set up model """
@@ -165,7 +173,15 @@ class trainW2V:
                     },                  
                     os.path.join(self.outPath, 'model_'+name+'.pt'))
 
+
     def getEmbedded(self):
+
+        """ Returns the embedding layer weights, equivalent to the word vectors in 
+            the embedded space.
+
+        Returns:
+            (numpy array): the embedding layer weights.
+        """
 
         return self.model.getEmbedded()
 
@@ -195,7 +211,7 @@ if __name__ == "__main__":
     else:
         email = args.email
 
-    if args.database is 'all':
+    if args.database=='all':
         database = ['pubmed', 'biorxiv', 'scholar']
     else:
         database = args.database.split(',')
@@ -219,8 +235,12 @@ if __name__ == "__main__":
     """ Train Word2Vec """
 
     print('\nTraining W2V...')
-    miniW2V = trainW2V(text, windowSize=8, negWords=20, embedDim=200, nOccur=50, wInit='xavier', raw=True, optimizer='Adagrad',
-                 epochs=100, lr=0.01, patience=5, epsilon=1e-7, tShuff=True, saveFreq=-1, outPath=basepath)
+    miniW2V = trainW2V(text, windowSize=8, negWords=20, embedDim=200, nOccur=10, phMinCount=10, phThresh=15, phDepth=4, 
+                 wInit='xavier', raw=True, optimizer='Adagrad', epochs=100, lr=0.01, patience=5, epsilon=1e-7, 
+                 tShuff=True, saveFreq=-1, outPath=basepath)
+
+
+    print([x for x in miniW2V.trainDs.rwDict.index if '_' in x])
 
     miniW2V.train()
     miniW2V.saveModel(name='_best_{:.5f}'.format(miniW2V.earlStop.bestScore))
@@ -231,12 +251,11 @@ if __name__ == "__main__":
     embed = pd.DataFrame(miniW2V.getEmbedded()[:miniW2V.trainDs.rwDict.shape[0]], index=miniW2V.trainDs.rwDict.index)
     embed.to_hdf(os.path.join(basepath,'embedded.h5'),key='df')
 
-  
     """ Plotting """
 
     plotLoss(miniW2V.losses, path=os.path.join(basepath,'batch_loss.png'))
 
-    words=[miniW2V.trainDs.rwDict.index[0],'mycn','tert']
+    words=[miniW2V.trainDs.rwDict.index[0],miniW2V.trainDs.rwDict.index[2],miniW2V.trainDs.rwDict.index[3]]
     plotUmap(embed, words=words, path=basepath)
     
     for word in words:

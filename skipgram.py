@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class skipGram(nn.Module):
 
     """ Basic skip-gram implementation """
@@ -47,6 +48,7 @@ class skipGram(nn.Module):
         else:
             sys.exit('ERROR: weights initialization not available.')
         
+
     def getEmbedded(self):
         
         """ Returns the embedding layer weights, equivalent to the word vectors in 
@@ -57,6 +59,7 @@ class skipGram(nn.Module):
         """
 
         return self.embWord.weight.cpu().detach().numpy()
+
 
     def forward(self, word, context, negative):
 

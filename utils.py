@@ -21,6 +21,7 @@ try:
 except:
 	umapLoaded = False
 
+
 def flattenByAdd(lista):
     
     """ Flattens a list of lists by addition, surprisingly faster than list comprehension. 
@@ -37,6 +38,7 @@ def flattenByAdd(lista):
         result += sublist
     
     return result
+
 
 def flattenByComprehension(lista):
 
@@ -94,6 +96,7 @@ def plotLoss(vals, xlab='Batch', ylab='Loss', path='./plot.png'):
 
 	plt.plot(vals)
 	plt.savefig(path, dpi=300)
+
 
 def plotUmap(data, words=None, neigh=None, path='./'):
 

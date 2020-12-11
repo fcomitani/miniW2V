@@ -97,6 +97,7 @@ class abstractScraper():
         
         return Entrez.read(handle)['IdList']
 
+
     def fetchDetails(self, idsList):
 
         """ Fetch details for a list of publication IDs. 
@@ -208,8 +209,6 @@ class abstractScraper():
                                         paper['authors']
                                         ])
                     totalpapers += 1
-
-        print(chunkIx, totalpapers)
 
     def scrapeScholar(self):
 

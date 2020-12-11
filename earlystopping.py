@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import copy
 
+
 class EarlyStopping:
 
     """ Stops the training if loss doesn't improve after a given number of epochs. """
