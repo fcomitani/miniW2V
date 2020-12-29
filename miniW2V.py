@@ -48,8 +48,7 @@ class trainW2V:
                 lr (float): learning rage (default .01).
                 patience (int): early stop patience (default 5).
                 epsilon (float): early stop epsilon (default 1e-5).
-                raw (bool): if True clean the input text (default True).
-                
+                raw (bool): if True clean the input text (default True).                
                 tShuff (bool): shuffle training set at each epoch (default false).
                 saveFreq (int): frequency of model checkpoints, if < 0 don't save checkpoints (default -1).
                 restoreBest (bool): restore and save best model by early stopping.
